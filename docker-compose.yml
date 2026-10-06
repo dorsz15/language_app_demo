@@ -1,4 +1,19 @@
 services:
+  backend:
+    build: ./backend
+    container_name: app_backend
+    restart: unless-stopped
+    networks:
+      - app_net
+    ports:
+      - "5000:5000"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${POSTGRES_DB:-language_app};Username=${POSTGRES_USER:-app_admin};Password=${POSTGRES_PASSWORD:-change_this_secure_password}
+    depends_on:
+      - postgres
+      - nlp_service
+      - ocr_service
+
   nlp_service:
       build: ./nlp_service
       container_name: app_nlp
@@ -7,7 +22,7 @@ services:
         - app_net
       ports:
         - "127.0.0.1:8001:8001"
-        
+
   ocr_service:
       build: ./paddleOCR_service
       container_name: paddleOCR
