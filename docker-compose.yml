@@ -1,0 +1,44 @@
+services:
+  nlp_service:
+      build: ./nlp_service
+      container_name: app_nlp
+      restart: unless-stopped
+      networks:
+        - app_net
+      ports:
+        - "127.0.0.1:8001:8001"
+        
+  ocr_service:
+      build: ./paddleOCR_service
+      container_name: paddleOCR
+      restart: unless-stopped
+      networks:
+        - app_net
+      ports:
+        # Exposed locally for testing; remove host port mapping if only accessed by backend
+        - "127.0.0.1:8000:8000"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: app_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-language_app}
+      POSTGRES_USER: ${POSTGRES_USER:-app_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_secure_password}
+    ports:
+      # Bound to localhost (127.0.0.1) so DB port is not exposed publicly to the internet
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # Data persistence across container stops/reboots
+      - postgres_data:/var/lib/postgresql/data
+      # Automated initialization on first container creation
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  app_net:
+    driver: bridge
